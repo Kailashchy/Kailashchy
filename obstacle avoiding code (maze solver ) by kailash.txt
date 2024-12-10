@@ -1,0 +1,132 @@
+#include <NewPing.h>
+#define MOTOR_A1 7
+#define MOTOR_A2 8
+#define MOTOR_B1 9  
+#define MOTOR_B2 10
+#define en1 6
+#define en2 11
+#define threshold 19  // Threshold distance 
+NewPing sonarLeft(A3, A4);
+NewPing sonarRight(A1, A0);
+NewPing sonarCenter(3, 2, 200);
+int electro = 220;
+bool abth(unsigned int distance) {
+  return distance >= threshold;
+}
+void setup() {
+  pinMode(MOTOR_A1, OUTPUT);
+  pinMode(MOTOR_A2, OUTPUT);
+  pinMode(MOTOR_B1, OUTPUT);
+  pinMode(MOTOR_B2, OUTPUT);
+  pinMode(en1, OUTPUT);
+  pinMode(en2, OUTPUT);
+  pinMode(13, OUTPUT);
+  Serial.begin(9600); // For debugging
+}
+void loop() {
+  unsigned int distanceLeft = sonarLeft.ping_cm();
+  delayMicroseconds(0.001);
+  unsigned int distanceRight = sonarRight.ping_cm();
+  delayMicroseconds(0.001);
+  unsigned int distanceCenter = sonarCenter.ping_cm();
+  delayMicroseconds(0.001);
+
+ Serial.print("Left: "+ String(distanceLeft));
+  Serial.print(" Right: "+ String(distanceRight));
+  Serial.print("  Center: "+ String(distanceCenter));
+  electro = map(distanceCenter, threshold, 200, 220, 255);
+  electro = constrain(electro, 220, 255);
+ if (abth(distanceCenter) && abth(distanceLeft) && abth(distanceRight)) {
+    moveForward();
+    delay(100);
+  } else if (!abth(distanceLeft) && !abth(distanceRight) && abth(distanceCenter)) {
+    moveForward();
+    delay(20);
+  } else if (!abth(distanceLeft) && abth(distanceRight)) {
+    turnRight();
+    delay(20);
+  } else if (abth(distanceLeft) && !abth(distanceRight)) {
+    turnLeft();
+    delay(20);
+  } else if (!abth(distanceLeft) && !abth(distanceRight) && !abth(distanceCenter)) {
+    stopMotors();
+    delay(10);
+    moveBackwards();
+    delay(50);
+    if (distanceLeft >= distanceRight) {
+      turnLeft();
+      delay(100);
+    } else {
+      turnRight();
+      delay(100);
+    }
+  } else if (abth(distanceCenter) && !abth(distanceLeft)) {
+    turnRight();
+    delay(20);
+  }
+  else if (abth(distanceCenter) && !abth(distanceRight)) {
+    turnLeft();
+    delay(20);
+  }
+  else if (abth(distanceCenter) && !abth(distanceLeft)) {
+    turnRight();
+    delay(20);
+  }
+  else if (!abth(distanceCenter)) {
+     stopMotors();
+    delay(10);
+    moveBackwards();
+    delay(90);
+    if (distanceLeft >= distanceRight) {
+      turnLeft();
+      delay(100);
+    } else 
+    {
+      turnRight();
+      delay(100);
+    }
+  }
+ delay(10);
+}
+
+void moveForward() {
+  digitalWrite(MOTOR_A1, 1);
+  digitalWrite(MOTOR_A2, 0);
+  digitalWrite(MOTOR_B1, 1);
+  digitalWrite(MOTOR_B2, 0);
+  analogWrite(en1, electro);
+  analogWrite(en2, electro);
+}
+void moveBackwards() {
+  digitalWrite(MOTOR_A1, 0);
+  digitalWrite(MOTOR_A2, 1);
+  digitalWrite(MOTOR_B1, 0);
+  digitalWrite(MOTOR_B2, 1);
+  analogWrite(en1,205);
+  analogWrite(en2,205);
+}
+void turnLeft() {
+  digitalWrite(MOTOR_A1, 0);
+  digitalWrite(MOTOR_A2, 1);
+  digitalWrite(MOTOR_B1, 1);
+  digitalWrite(MOTOR_B2, 0);
+  analogWrite(en1, 185);
+  analogWrite(en2,205);
+}
+void turnRight() {
+  digitalWrite(MOTOR_A1, 1);
+  digitalWrite(MOTOR_A2, 0);
+  digitalWrite(MOTOR_B1, 0);
+  digitalWrite(MOTOR_B2, 1);
+  analogWrite(en1,205);
+  analogWrite(en2, 185);
+}
+
+void stopMotors() {
+  digitalWrite(MOTOR_A1, 0);
+  digitalWrite(MOTOR_A2, 0);
+  digitalWrite(MOTOR_B1, 0);
+  digitalWrite(MOTOR_B2, 0);
+  analogWrite(en1, 0);
+  analogWrite(en2, 0);
+}
